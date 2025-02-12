@@ -21,7 +21,7 @@ const App = () => {
           {
             headers: {
               // auth
-              Authorization: `Bearer eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJFUzI1NksifQ.eyJzY29wZSI6ImNvbS5hdHByb3RvLmFjY2VzcyIsInN1YiI6ImRpZDpwbGM6bmxja3c1bm03dHpvaHNremJyZWhicW5kIiwiaWF0IjoxNzM4NzE2ODU3LCJleHAiOjE3Mzg3MjQwNTcsImF1ZCI6ImRpZDp3ZWI6cGlvcHBpbm8udXMtd2VzdC5ob3N0LmJza3kubmV0d29yayJ9.Q8m8aqrBjetss7556MLSa7fDLWomglDHWlNXvuTK6ITeJOP4Fba5kxyFVWLi-gUeKHGTPjeIBQIfufoyUarMyA`,
+              Authorization: `Bearer eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJFUzI1NksifQ.eyJzY29wZSI6ImNvbS5hdHByb3RvLmFwcFBhc3NQcml2aWxlZ2VkIiwic3ViIjoiZGlkOnBsYzpocWc1YWxhMzR4Nnd6YXV4Zml2ZHM1b2QiLCJpYXQiOjE3MzkzOTgzNzUsImV4cCI6MTczOTQwNTU3NSwiYXVkIjoiZGlkOndlYjplbGZjdXAudXMtZWFzdC5ob3N0LmJza3kubmV0d29yayJ9.lNaR4WmLrNuFGQPyytML4aTwHTVWJspUd7OgRONG-RpV87IAYDg3N1zz7UFp4DWYDn9-vr6TtWG8BUgPFkBuMA`,
             },
           }
         );
@@ -44,35 +44,34 @@ const App = () => {
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ textAlign: "center", fontSize: "24px", marginBottom: "20px" }}>Paper Recommender</h1>
+      <h1>Paper Recommender</h1>
 
-      {/* Filters Section */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", marginBottom: "20px" }}>
-        {filterCategories.map((category) => (
-          <div key={category} style={{ display: "flex", flexDirection: "column" }}>
-            <label style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "5px" }}>{category}</label>
-            <select
-              onChange={(e) => setFilters({ ...filters, [category.toLowerCase().replace(/ /g, "_")]: e.target.value })}
-              style={{
-                padding: "8px",
-                fontSize: "14px",
-                borderRadius: "5px",
-                border: "1px solid #ccc",
-              }}
-            >
-              <option value="" disabled selected>Select an option</option>
-              <option value="Option 1">Option 1</option>
-              <option value="Option 2">Option 2</option>
-              <option value="Option 3">Option 3</option>
-            </select>
-          </div>
-        ))}
-      </div>
+    <h2 style={{ fontSize: "20px", marginBottom: "10px" }}>Filters</h2>
+    {/* Filters Section */}
+    <div class="filters-section">
+      {filterCategories.map((category) => (
+        <div key={category} class="filter-item">
+          <label class="filter-label">
+            {category}
+          </label>
+          <select
+            onChange={(e) => setFilters({ ...filters, [category.toLowerCase().replace(/ /g, "_")]: e.target.value })}
+            class="filter-select"
+          >
+            <option value="" disabled selected>Select an option</option>
+            <option value="Option 1">Option 1</option>
+            <option value="Option 2">Option 2</option>
+            <option value="Option 3">Option 3</option>
+          </select>
+        </div>
+      ))}
+    </div>
 
       {/* Paper Feed Section */}
-      <div className="container">
-        <h2 style={{ fontSize: "20px", marginBottom: "10px" }}>Preprint Digest Feed</h2>
+      <h2 style={{ fontSize: "20px", marginBottom: "10px" }}>Preprint Digest Feed</h2>
 
+      <div className="container">
+        
         {loading ? (
           <p>Loading feed...</p>
         ) : error ? (
