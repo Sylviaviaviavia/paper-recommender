@@ -59,6 +59,11 @@ const App = () => {
       setLoading(false);
     }
   };
+  const [openPostId, setOpenPostId] = useState(null);
+
+  const toggleComments = (postId) => {
+    setOpenPostId(openPostId === postId ? null : postId); // Toggle visibility
+  };
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
@@ -124,7 +129,10 @@ const App = () => {
               const post = item.post;
               const record = post.record;
               const embed = record.embed?.external;
-
+              const reply = item?.reply;
+              const root = reply?.root;
+              const parent = reply?.parent;
+              
               return (
                 <div
                   key={index}
@@ -137,6 +145,82 @@ const App = () => {
                     boxShadow: "0px 2px 5px rgba(0, 0, 0, 0.1)",
                   }}
                 >
+                  {/* Thread (Toggled) */}
+                  {openPostId === post.uri && root && (
+                    <div style={{ marginTop: '20px' }}>
+                      <p>Thread Root</p>
+                      <div key={index} style={{ marginBottom: '15px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                          <img
+                            src={root.author.avatar}
+                            alt="Avatar"
+                            style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }}
+                          />
+                          <div>
+                            <h3 style={{ fontSize: '16px', margin: '0', fontWeight: 'bold' }}>{root.author.displayName}</h3>
+                            <p style={{ fontSize: '12px', margin: '0', color: '#555' }}>@{root.author.handle}</p>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '14px', marginBottom: '10px' }}>{root.record.text}</p>
+                        {root.embed?.uri && (
+                          <p>
+                            <a
+                              href={root.embed.uri}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ fontSize: '14px', color: '#1a73e8', textDecoration: 'none' }}
+                            >
+                              📄 Read Paper: {root.embed.title || 'View Paper'}
+                            </a>
+                          </p>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666' }}>
+                          <p>👍 {root.likeCount || 0} Likes</p>
+                        </div>
+                      </div>
+                      {root.uri == parent.uri && (
+                        <hr />
+                      )}
+                  </div>
+                  )}
+                  {openPostId === post.uri && parent && root.uri != parent.uri && (
+                    <div style={{ marginTop: '20px' }}>
+                      <hr />
+                      <p>---Full Thread Not Shown---</p>
+                      <hr />
+                      <p>Thread parent</p>
+                      <div key={index} style={{ marginBottom: '15px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                          <img
+                            src={parent.author.avatar}
+                            alt="Avatar"
+                            style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }}
+                          />
+                          <div>
+                            <h3 style={{ fontSize: '16px', margin: '0', fontWeight: 'bold' }}>{parent.author.displayName}</h3>
+                            <p style={{ fontSize: '12px', margin: '0', color: '#555' }}>@{parent.author.handle}</p>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '14px', marginBottom: '10px' }}>{parent.record.text}</p>
+                        {parent.embed?.uri && (
+                          <p>
+                            <a
+                              href={parent.embed.uri}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ fontSize: '14px', color: '#1a73e8', textDecoration: 'none' }}
+                            >
+                              📄 Read Paper: {parent.embed.title || 'View Paper'}
+                            </a>
+                          </p>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666' }}>
+                          <p>👍 {parent.likeCount || 0} Likes</p>
+                        </div>
+                      </div>
+                      <hr />
+                  </div>
+                  )}
                   <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
                     <img
                       src={post.author.avatar}
@@ -159,6 +243,9 @@ const App = () => {
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#666" }}>
                     <p>👍 {post.likeCount || 0} Likes</p>
                     <p>💬 {post.replyCount || 0} Comments</p>
+                    { root &&
+                      (<p onClick={() => toggleComments(post.uri)} style={{ cursor: 'pointer' }}>💬 Thread</p>)
+                    }
                     <p>📅 {new Date(record.createdAt).toLocaleString()}</p>
                   </div>
                 </div>
