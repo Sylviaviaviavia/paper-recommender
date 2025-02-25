@@ -45,7 +45,7 @@ const App = () => {
     setError(null);
 
     try {
-      const response = await fetch("https://bsky.social/xrpc/app.bsky.feed.getAuthorFeed?actor=did:plc:6ysaocl4wbig54tsqox4a2f5", {
+      const response = await fetch("https://bsky.social/xrpc/app.bsky.feed.getFeed?feed=at://did:plc:uaadt6f5bbda6cycbmatcm3z/app.bsky.feed.generator/preprintdigest", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
