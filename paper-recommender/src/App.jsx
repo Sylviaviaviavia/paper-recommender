@@ -14,7 +14,7 @@ const App = () => {
     "Category 5", "Category 6", "Category 7", "Category 8"
   ];
 
-  // 🔹 Login function
+  // Login function
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
@@ -39,7 +39,7 @@ const App = () => {
     }
   };
 
-  // 🔹 Fetch feed after login
+  // Fetch feed after login
   const fetchFeed = async (token) => {
     setLoading(true);
     setError(null);
@@ -64,12 +64,12 @@ const App = () => {
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h1 style={{ textAlign: "center" }}>Paper Recommender</h1>
 
-      {/* 🔹 Login Form (Only if user is not logged in) */}
+      {/* Login Form (Only if user is not logged in) */}
       {!authToken ? (
         <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "400px", margin: "auto" }}>
           <input
             type="email"
-            placeholder="Email or Handle"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -90,7 +90,7 @@ const App = () => {
         </form>
       ) : (
         <>
-          {/* 🔹 Filters (Only after login) */}
+          {/* Filters (Only after login) */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", marginBottom: "20px" }}>
             {filterCategories.map((category) => (
               <div key={category} style={{ display: "flex", flexDirection: "column" }}>
@@ -113,7 +113,7 @@ const App = () => {
             ))}
           </div>
 
-          {/* 🔹 Feed Section */}
+          {/* Feed Section */}
           <h2>Preprint Digest Feed</h2>
           {loading ? (
             <p>Loading feed...</p>
