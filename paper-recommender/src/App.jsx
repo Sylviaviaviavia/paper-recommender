@@ -8,6 +8,10 @@ const App = () => {
   const [filters, setFilters] = useState({}); // Store selected filters
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [openPostId, setOpenPostId] = useState(null);
+  const [FeedList, setFeedList] = useState([]);
+  const [prevroot, setRoot] = useState(null);
+  const displayedRoots = new Set();
 
   const filterCategories = [
     "Category 1", "Category 2", "Category 3", "Category 4",
@@ -52,14 +56,19 @@ const App = () => {
       if (!response.ok) throw new Error("Failed to fetch feed.");
 
       const data = await response.json();
-      setFeedData(data.feed || []);
+      setFeedList(data.feed.map((item) => item.post.uri));
+      const replyList = data.feed.flatMap((item) => 
+        [item.reply?.root?.uri, item.reply?.parent?.uri].filter(Boolean)
+      );
+      setFeedData(data.feed.filter((item) => !replyList.includes(item.post.uri)) || []);
+      console.log(replyList);
+      console.log(data.feed.filter((item) => !replyList.includes(item.post.uri)));
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
-  const [openPostId, setOpenPostId] = useState(null);
 
   const toggleComments = (postId) => {
     setOpenPostId(openPostId === postId ? null : postId); // Toggle visibility
@@ -132,7 +141,11 @@ const App = () => {
               const reply = item?.reply;
               const root = reply?.root;
               const parent = reply?.parent;
-              
+              const shouldShowRoot = root && !displayedRoots.has(root.uri);
+              if (shouldShowRoot) {
+                displayedRoots.add(root.uri);
+              }
+
               return (
                 <div
                   key={index}
@@ -146,9 +159,9 @@ const App = () => {
                   }}
                 >
                   {/* Thread (Toggled) */}
-                  {openPostId === post.uri && root && (
+                  {root && (shouldShowRoot && (FeedList && FeedList.includes(root.uri)) || (openPostId === post.uri)) && (
                     <div style={{ marginTop: '20px' }}>
-                      <p>Thread Root</p>
+                      <p className="note">Thread Root</p>
                       <div key={index} style={{ marginBottom: '15px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                           <img
@@ -162,15 +175,15 @@ const App = () => {
                           </div>
                         </div>
                         <p style={{ fontSize: '14px', marginBottom: '10px' }}>{root.record.text}</p>
-                        {root.embed?.uri && (
+                        {root.record.embed?.external && (
                           <p>
                             <a
-                              href={root.embed.uri}
+                              href={root.embed.external.uri}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ fontSize: '14px', color: '#1a73e8', textDecoration: 'none' }}
                             >
-                              📄 Read Paper: {root.embed.title || 'View Paper'}
+                              📄 Read Paper: {root.embed.external.title || 'View Paper'}
                             </a>
                           </p>
                         )}
@@ -183,12 +196,12 @@ const App = () => {
                       )}
                   </div>
                   )}
-                  {openPostId === post.uri && parent && root.uri != parent.uri && (
+                  {parent && root.uri != parent.uri && ((FeedList && FeedList.includes(root.uri) || FeedList.includes(parent.uri) || (openPostId === post.uri))) && (
                     <div style={{ marginTop: '20px' }}>
                       <hr />
-                      <p>---Full Thread Not Shown---</p>
+                      <p className="note">---Full Thread Not Shown---</p>
                       <hr />
-                      <p>Thread parent</p>
+                      <p className="note">Thread parent</p>
                       <div key={index} style={{ marginBottom: '15px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                           <img
@@ -202,15 +215,15 @@ const App = () => {
                           </div>
                         </div>
                         <p style={{ fontSize: '14px', marginBottom: '10px' }}>{parent.record.text}</p>
-                        {parent.embed?.uri && (
+                        {parent.record.embed?.external && (
                           <p>
                             <a
-                              href={parent.embed.uri}
+                              href={parent.embed.external.uri}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ fontSize: '14px', color: '#1a73e8', textDecoration: 'none' }}
                             >
-                              📄 Read Paper: {parent.embed.title || 'View Paper'}
+                              📄 Read Paper: {parent.embed.external.title || 'View Paper'}
                             </a>
                           </p>
                         )}
