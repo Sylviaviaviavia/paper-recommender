@@ -61,8 +61,6 @@ const App = () => {
         [item.reply?.root?.uri, item.reply?.parent?.uri].filter(Boolean)
       );
       setFeedData(data.feed.filter((item) => !replyList.includes(item.post.uri)) || []);
-      console.log(replyList);
-      console.log(data.feed.filter((item) => !replyList.includes(item.post.uri)));
     } catch (err) {
       setError(err.message);
     } finally {
