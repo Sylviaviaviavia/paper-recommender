@@ -89,7 +89,7 @@ const App = () => {
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder="App Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -98,6 +98,15 @@ const App = () => {
           <button type="submit" style={{ padding: "10px", fontSize: "16px", background: "#007bff", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>
             {loading ? "Logging in..." : "Login"}
           </button>
+          <p>Please use <strong>App password</strong> rather than your own password.</p>
+          <p>How to Get an App Password on Bluesky</p>
+          <ol>
+              <li>Log in to your account on <a href="https://bsky.app" target="_blank">bsky</a>.</li>
+              <li>Visit <a href="https://bsky.app/settings/app-passwords">App Password Page</a>.</li>
+              <li>Select <strong>Add app password</strong> and follow the instructions.</li>
+              <li>Copy the generated password and enter it above with your email address.</li>
+          </ol>
+          <p><strong>Note:</strong> Store the password safely. Bluesky will not show it again.</p>
           {error && <p style={{ color: "red" }}>{error}</p>}
         </form>
       ) : (
