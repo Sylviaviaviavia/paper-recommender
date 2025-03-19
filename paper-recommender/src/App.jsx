@@ -1,16 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const App = () => {
-  const [email, setEmail] = useState(""); // User email
-  const [password, setPassword] = useState(""); // User password
-  const [authToken, setAuthToken] = useState(""); // Store BlueSky auth token
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authToken, setAuthToken] = useState("");
   const [feedData, setFeedData] = useState([]);
-  const [filters, setFilters] = useState({}); // Store selected filters
+  const [filters, setFilters] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [openPostId, setOpenPostId] = useState(null);
   const [FeedList, setFeedList] = useState([]);
-  const [prevroot, setRoot] = useState(null);
+  const [userLikes, setUserLikes] = useState({});
   const displayedRoots = new Set();
 
   const filterCategories = [
@@ -18,7 +18,15 @@ const App = () => {
     "Category 5", "Category 6", "Category 7", "Category 8"
   ];
 
-  // Login function
+  useEffect(() => {
+    const savedLikes = JSON.parse(localStorage.getItem("userLikes")) || {};
+    setUserLikes(savedLikes);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("userLikes", JSON.stringify(userLikes));
+  }, [userLikes]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
@@ -43,19 +51,40 @@ const App = () => {
     }
   };
 
-  // Fetch feed after login
+  const handleLogout = () => {
+    setAuthToken("");
+    setFeedData([]);
+  };
+
   const fetchFeed = async (token) => {
     setLoading(true);
     setError(null);
-
+  
     try {
       const response = await fetch("https://bsky.social/xrpc/app.bsky.feed.getFeed?feed=at://did:plc:uaadt6f5bbda6cycbmatcm3z/app.bsky.feed.generator/preprintdigest", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+  
       if (!response.ok) throw new Error("Failed to fetch feed.");
-
+  
       const data = await response.json();
+  
+      // Load stored likes from localStorage
+      const savedLikes = JSON.parse(localStorage.getItem("userLikes")) || {};
+  
+      // Merge stored likes with new posts without overwriting
+      const newLikes = { ...savedLikes };
+      data.feed.forEach((item) => {
+        const postId = item.post.uri;
+        if (!(postId in newLikes)) {
+          newLikes[postId] = false; // Default to not liked if not stored
+        }
+      });
+  
+      // Save updated likes back to localStorage
+      localStorage.setItem("userLikes", JSON.stringify(newLikes));
+  
+      setUserLikes(newLikes); // Keep likes persistent
       setFeedList(data.feed.map((item) => item.post.uri));
       const replyList = data.feed.flatMap((item) => 
         [item.reply?.root?.uri, item.reply?.parent?.uri].filter(Boolean)
@@ -67,51 +96,94 @@ const App = () => {
       setLoading(false);
     }
   };
+  
 
   const toggleComments = (postId) => {
-    setOpenPostId(openPostId === postId ? null : postId); // Toggle visibility
+    setOpenPostId(openPostId === postId ? null : postId);
   };
+
+  const toggleUserLike = (postId) => {
+    setUserLikes((prevLikes) => {
+      const updatedLikes = {
+        ...prevLikes,
+        [postId]: !prevLikes[postId],
+      };
+  
+      localStorage.setItem("userLikes", JSON.stringify(updatedLikes)); // Immediately save updated likes
+      return updatedLikes;
+    });
+  };  
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h1 style={{ textAlign: "center" }}>Paper Recommender</h1>
 
-      {/* Login Form (Only if user is not logged in) */}
       {!authToken ? (
-        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "400px", margin: "auto" }}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ padding: "10px", fontSize: "16px", borderRadius: "5px", border: "1px solid #ccc" }}
-          />
-          <input
-            type="password"
-            placeholder="App Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ padding: "10px", fontSize: "16px", borderRadius: "5px", border: "1px solid #ccc" }}
-          />
-          <button type="submit" style={{ padding: "10px", fontSize: "16px", background: "#007bff", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>
-            {loading ? "Logging in..." : "Login"}
-          </button>
-          <p>Please use <strong>App password</strong> rather than your own password.</p>
-          <p>How to Get an App Password on Bluesky</p>
-          <ol>
-              <li>Log in to your account on <a href="https://bsky.app" target="_blank">bsky</a>.</li>
-              <li>Visit <a href="https://bsky.app/settings/app-passwords">App Password Page</a>.</li>
-              <li>Select <strong>Add app password</strong> and follow the instructions.</li>
-              <li>Copy the generated password and enter it above with your email address.</li>
-          </ol>
-          <p><strong>Note:</strong> Store the password safely. Bluesky will not show it again.</p>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-        </form>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "40px" }}>
+          {/* Login Form */}
+          <div style={{
+            display: "flex", flexDirection: "column", gap: "10px", maxWidth: "400px", 
+            width: "100%", padding: "20px", borderRadius: "10px", backgroundColor: "#ffffff",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)"
+          }}>
+            <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{ padding: "10px", fontSize: "16px", borderRadius: "5px", border: "1px solid #ccc" }}
+              />
+              <input
+                type="password"
+                placeholder="Enter your App Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{ padding: "10px", fontSize: "16px", borderRadius: "5px", border: "1px solid #ccc" }}
+              />
+              <button type="submit" style={{ 
+                padding: "10px", fontSize: "16px", background: "#1e90ff", color: "white", 
+                border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold"
+              }}>
+                {loading ? "Logging in..." : "Login"}
+              </button>
+            </form>
+            {error && <p style={{ color: "red", fontSize: "14px", marginTop: "10px", textAlign: "center" }}>{error}</p>}
+          </div>
+
+          {/* Instruction Box */}
+          <div style={{
+            marginTop: "40px", maxWidth: "450px", width: "100%", padding: "25px", 
+            borderRadius: "10px", backgroundColor: "#f8f9fa", border: "1px solid #ddd",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)"
+          }}>
+            {/* <h3 style={{ fontSize: "18px", marginBottom: "10px", textAlign: "center" }}>How to Get an App Password</h3> */}
+            <p style={{ textAlign: "center", fontSize: "14px" }}>
+              <strong>Note:</strong> Use an <b>App Password</b> instead of your main password.
+            </p>
+            <ol style={{ paddingLeft: "20px", fontSize: "14px" }}>
+              <li>Log in to <a href="https://bsky.app" target="_blank" style={{ color: "#007bff", textDecoration: "none", fontWeight: "bold" }}>Bluesky</a>.</li>
+              <li>Go to <a href="https://bsky.app/settings/app-passwords" target="_blank" style={{ color: "#007bff", textDecoration: "none", fontWeight: "bold" }}>App Passwords</a> settings.</li>
+              <li>Click <strong>"Add app password"</strong> and follow the instructions.</li>
+              <li>Copy the generated password and enter it above.</li>
+            </ol>
+            <p style={{ fontSize: "14px", textAlign: "center", fontWeight: "bold", color: "#dc3545" }}>
+              ⚠️ You won't be able to see the password again, so save it safely!
+            </p>
+          </div>
+        </div>
       ) : (
         <>
-          {/* Filters (Only after login) */}
+          <button onClick={handleLogout} style={{
+            padding: "10px", fontSize: "14px", background: "crimson", color: "white", border: "none", borderRadius: "5px", cursor: "pointer",
+            position: "absolute", top: "60px", right: "20px"
+          }}>
+            Logout
+          </button>
+
+          {/* Filters Section */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", marginBottom: "20px" }}>
             {filterCategories.map((category) => (
               <div key={category} style={{ display: "flex", flexDirection: "column" }}>
@@ -134,7 +206,6 @@ const App = () => {
             ))}
           </div>
 
-          {/* Feed Section */}
           <h2>Preprint Digest Feed</h2>
           {loading ? (
             <p>Loading feed...</p>
@@ -152,6 +223,7 @@ const App = () => {
               if (shouldShowRoot) {
                 displayedRoots.add(root.uri);
               }
+              const isUserLiked = userLikes[post.uri] || false;
 
               return (
                 <div
@@ -163,8 +235,27 @@ const App = () => {
                     marginBottom: "15px",
                     backgroundColor: "#fff",
                     boxShadow: "0px 2px 5px rgba(0, 0, 0, 0.1)",
+                    position: "relative"
                   }}
                 >
+                  {/* User Like Button */}
+                  <button 
+                    onClick={() => toggleUserLike(post.uri)}
+                    style={{
+                      padding: "5px",
+                      background: "none",
+                      color: isUserLiked ? "red" : "#ccc",
+                      border: "none",
+                      fontSize: "20px",
+                      cursor: "pointer",
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      transition: "color 0.3s ease"
+                    }}
+                  >
+                    {isUserLiked ? "❤️" : "🤍"}
+                  </button>
                   {/* Thread (Toggled) */}
                   {root && (shouldShowRoot && (FeedList && FeedList.includes(root.uri)) || (openPostId === post.uri)) && (
                     <div style={{ marginTop: '20px' }}>
@@ -274,9 +365,6 @@ const App = () => {
           ) : (
             <p>No feed data available.</p>
           )}
-          <button onClick={() => setAuthToken("")} style={{ marginTop: "10px", padding: "10px", background: "red", color: "white", border: "none", borderRadius: "5px", cursor: "pointer" }}>
-            Logout
-          </button>
         </>
       )}
     </div>
@@ -287,7 +375,10 @@ export default App;
 
 
 
-{/* npm run dev */}
+
+
+
+
 
 
 
