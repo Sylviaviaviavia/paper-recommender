@@ -21,11 +21,11 @@ const App = () => {
   useEffect(() => {
     const savedLikes = JSON.parse(localStorage.getItem("userLikes")) || {};
     setUserLikes(savedLikes);
-  }, []);
+  }, [feedData]);   
 
-  useEffect(() => {
-    localStorage.setItem("userLikes", JSON.stringify(userLikes));
-  }, [userLikes]);
+  // useEffect(() => {
+  //   localStorage.setItem("userLikes", JSON.stringify(userLikes));
+  // }, [userLikes]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -68,34 +68,33 @@ const App = () => {
       if (!response.ok) throw new Error("Failed to fetch feed.");
   
       const data = await response.json();
-  
-      // Load stored likes from localStorage
+      
       const savedLikes = JSON.parse(localStorage.getItem("userLikes")) || {};
   
-      // Merge stored likes with new posts without overwriting
       const newLikes = { ...savedLikes };
       data.feed.forEach((item) => {
         const postId = item.post.uri;
         if (!(postId in newLikes)) {
-          newLikes[postId] = false; // Default to not liked if not stored
+          newLikes[postId] = false;  // Default to not liked
         }
       });
   
-      // Save updated likes back to localStorage
       localStorage.setItem("userLikes", JSON.stringify(newLikes));
   
-      setUserLikes(newLikes); // Keep likes persistent
       setFeedList(data.feed.map((item) => item.post.uri));
       const replyList = data.feed.flatMap((item) => 
         [item.reply?.root?.uri, item.reply?.parent?.uri].filter(Boolean)
       );
       setFeedData(data.feed.filter((item) => !replyList.includes(item.post.uri)) || []);
+      
+      setUserLikes(newLikes); 
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+  
   
 
   const toggleComments = (postId) => {
@@ -106,13 +105,14 @@ const App = () => {
     setUserLikes((prevLikes) => {
       const updatedLikes = {
         ...prevLikes,
-        [postId]: !prevLikes[postId],
+        [postId]: !prevLikes[postId],  
       };
   
-      localStorage.setItem("userLikes", JSON.stringify(updatedLikes)); // Immediately save updated likes
+      localStorage.setItem("userLikes", JSON.stringify(updatedLikes)); 
       return updatedLikes;
     });
-  };  
+  };
+  
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
