@@ -11,6 +11,7 @@ const App = () => {
   const [openPostId, setOpenPostId] = useState(null);
   const [FeedList, setFeedList] = useState([]);
   const [userLikes, setUserLikes] = useState({});
+  const [userID, setUserID] = useState("");
   const displayedRoots = new Set();
 
   const filterCategories = [
@@ -42,6 +43,8 @@ const App = () => {
       if (!response.ok) throw new Error("Login failed. Check your credentials.");
 
       const data = await response.json();
+
+      setUserID(data.did)
       setAuthToken(data.accessJwt);
       fetchFeed(data.accessJwt);
     } catch (err) {
@@ -101,7 +104,9 @@ const App = () => {
     setOpenPostId(openPostId === postId ? null : postId);
   };
 
-  const toggleUserLike = (postId) => {
+  const toggleUserLike = async (postId) => {
+    const parts = postId.replace("at://", "").split("/");
+    const interaction = `${parts[0]}+${parts[parts.length - 1]}`;
     setUserLikes((prevLikes) => {
       const updatedLikes = {
         ...prevLikes,
@@ -111,6 +116,20 @@ const App = () => {
       localStorage.setItem("userLikes", JSON.stringify(updatedLikes)); 
       return updatedLikes;
     });
+    try {
+      if (userLikes[postId]) {
+        await fetch(`/api/users/${userID}/interactions/${interaction}`, {
+          method: "DELETE",
+        });
+      } else {
+        await fetch(`/api/users/${userID}/interactions/${interaction}`, {
+          method: "POST",
+        });
+      }
+    }
+    catch (err) {
+      setError(err.message);
+    }
   };
   
 
