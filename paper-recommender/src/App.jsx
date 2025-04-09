@@ -19,11 +19,6 @@ const App = () => {
     "Category 5", "Category 6", "Category 7", "Category 8"
   ];
 
-  useEffect(() => {
-    const savedLikes = JSON.parse(localStorage.getItem("userLikes")) || {};
-    setUserLikes(savedLikes);
-  }, [feedData]);   
-
   // useEffect(() => {
   //   localStorage.setItem("userLikes", JSON.stringify(userLikes));
   // }, [userLikes]);
@@ -46,7 +41,7 @@ const App = () => {
 
       setUserID(data.did)
       setAuthToken(data.accessJwt);
-      fetchFeed(data.accessJwt);
+      fetchFeed(data.did, data.accessJwt);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -59,7 +54,7 @@ const App = () => {
     setFeedData([]);
   };
 
-  const fetchFeed = async (token) => {
+  const fetchFeed = async (userId, token) => {
     setLoading(true);
     setError(null);
   
@@ -71,26 +66,30 @@ const App = () => {
       if (!response.ok) throw new Error("Failed to fetch feed.");
   
       const data = await response.json();
+
+      const response_like = await fetch(`/api/users/${userId}/interactions`);
+      if (!response_like.ok) {
+        throw new Error('Failed to fetch liked posts');
+      }
+
+      const data_like = await response_like.json(); // the array of objects with post_did
+
+      // Extract just the post_did strings
+      const likedPostDids = data_like.map(item => item.post_did);
+      const postDids = data.feed.map(item => item.post.uri)
       
-      const savedLikes = JSON.parse(localStorage.getItem("userLikes")) || {};
-  
-      const newLikes = { ...savedLikes };
-      data.feed.forEach((item) => {
-        const postId = item.post.uri;
-        if (!(postId in newLikes)) {
-          newLikes[postId] = false;  // Default to not liked
-        }
+      // Compare with your own postIds
+      const likedMap = {};
+      postDids.forEach(pid => {
+        likedMap[pid] = likedPostDids.includes(pid);
       });
-  
-      localStorage.setItem("userLikes", JSON.stringify(newLikes));
+      setUserLikes(likedMap);
   
       setFeedList(data.feed.map((item) => item.post.uri));
       const replyList = data.feed.flatMap((item) => 
         [item.reply?.root?.uri, item.reply?.parent?.uri].filter(Boolean)
       );
       setFeedData(data.feed.filter((item) => !replyList.includes(item.post.uri)) || []);
-      
-      setUserLikes(newLikes); 
     } catch (err) {
       setError(err.message);
     } finally {
@@ -107,15 +106,6 @@ const App = () => {
   const toggleUserLike = async (postId) => {
     const parts = postId.replace("at://", "").split("/");
     const interaction = `${parts[0]}+${parts[parts.length - 1]}`;
-    setUserLikes((prevLikes) => {
-      const updatedLikes = {
-        ...prevLikes,
-        [postId]: !prevLikes[postId],  
-      };
-  
-      localStorage.setItem("userLikes", JSON.stringify(updatedLikes)); 
-      return updatedLikes;
-    });
     try {
       if (userLikes[postId]) {
         await fetch(`/api/users/${userID}/interactions/${interaction}`, {
@@ -130,6 +120,13 @@ const App = () => {
     catch (err) {
       setError(err.message);
     }
+    setUserLikes((prevLikes) => {
+      const updatedLikes = {
+        ...prevLikes,
+        [postId]: !prevLikes[postId],  
+      };
+      return updatedLikes;
+    });
   };
   
 
