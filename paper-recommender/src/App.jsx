@@ -222,6 +222,11 @@ const App = () => {
             ))}
           </div>
 
+          <div className="buttons">
+            <button>reset</button>
+            <button>save</button>
+          </div>
+
           <h2>Preprint Digest Feed</h2>
           {loading ? (
             <p>Loading feed...</p>
